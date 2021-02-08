@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react"
+import gsap from "gsap"
 import MarkdownPreview from "../components/markdownPreview"
 import Markdown from "../components/markdown"
-// import Header from "../components/header"
 import Title from "../components/title"
 import Subtitle from "../components/subtitle"
 import Work from "../components/work"
@@ -9,10 +9,11 @@ import Social from "../components/social"
 import Addons from "../components/addons"
 import Skills from "../components/skills"
 import Donate from "../components/donate"
+import Support from "../components/support"
 import { initialSkillState } from "../constants/skills"
-import gsap from "gsap"
 import Loader from "../components/loader"
-// import Footer from "../components/footer"
+import SEO from "../components/seo"
+import Layout from "../components/layout"
 import "./index.css"
 import {
   ArrowLeftIcon,
@@ -23,87 +24,20 @@ import {
   MarkdownIcon,
   FileCodeIcon,
 } from "@primer/octicons-react"
-import SEO from "../components/seo"
 import {
   isGitHubUsernameValid,
   isMediumUsernameValid,
-  isTwitterUsernameValid
+  isTwitterUsernameValid,
 } from "../utils/validation"
-import Layout from "../components/layout"
+import {
+  DEFAULT_PREFIX,
+  DEFAULT_DATA,
+  DEFAULT_LINK,
+  DEFAULT_SOCIAL,
+  DEFAULT_SUPPORT,
+} from "../constants/defaults"
 
-const DEFAULT_PREFIX = {
-  title: "Hi 👋, I'm",
-  currentWork: "🔭 I’m currently working on",
-  currentLearn: "🌱 I’m currently learning",
-  collaborateOn: "👯 I’m looking to collaborate on",
-  helpWith: "🤝 I’m looking for help with",
-  ama: "💬 Ask me about",
-  contact: "📫 How to reach me",
-  resume: "📄 Know about my experiences",
-  funFact: "⚡ Fun fact",
-  portfolio: "👨‍💻 All of my projects are available at",
-  blog: "📝 I regulary write articles on",
-  
-}
-
-const DEFAULT_DATA = {
-  title: "",
-  subtitle: "A passionate frontend developer from India",
-  currentWork: "",
-  currentLearn: "",
-  collaborateOn: "",
-  helpWith: "",
-  ama: "",
-  contact: "",
-  funFact: "",
-  twitterBadge: false,
-  visitorsBadge: false,
-  badgeStyle: "flat",
-  badgeColor: "0e75b6",
-  badgeLabel: "Profile views",
-  githubProfileTrophy: false,
-  githubStats: false,
-  topLanguages: false,
-  devDynamicBlogs: false,
-  mediumDynamicBlogs: false,
-  rssDynamicBlogs: false,
-}
-
-const DEFAULT_LINK = {
-  currentWork: "",
-  collaborateOn: "",
-  helpWith: "",
-  portfolio: "",
-  blog: "",
-  resume: "",
-}
-
-const DEFAULT_SOCIAL = {
-  github: "",
-  dev: "",
-  linkedin: "",
-  codepen: "",
-  stackoverflow: "",
-  kaggle: "",
-  codesandbox: "",
-  fb: "",
-  instagram: "",
-  twitter: "",
-  dribbble: "",
-  behance: "",
-  medium: "",
-  youtube: "",
-  codechef: "",
-  hackerrank: "",
-  codeforces: "",
-  leetcode: "",
-  topcoder: "",
-  hackerearth: "",
-  geeks_for_geeks: "",
-  rssurl: "",
-}
-
-const KeepCacheUpdated = ({ prefix, data, link, social, skills }) => {
+const KeepCacheUpdated = ({ prefix, data, link, social, skills, support }) => {
   useEffect(() => {
     localStorage.setItem(
       "cache",
@@ -113,9 +47,10 @@ const KeepCacheUpdated = ({ prefix, data, link, social, skills }) => {
         link,
         social,
         skills,
+        support,
       })
     )
-  }, [prefix, data, link, social, skills])
+  }, [prefix, data, link, social, skills, support])
 }
 
 const DEFAULT_SKILLS = initialSkillState
@@ -126,6 +61,7 @@ const IndexPage = () => {
   const [link, setLink] = useState(DEFAULT_LINK)
   const [social, setSocial] = useState(DEFAULT_SOCIAL)
   const [skills, setSkills] = useState(DEFAULT_SKILLS)
+  const [support, setSupport] = useState(DEFAULT_SUPPORT)
 
   const [restore, setRestore] = useState("")
   const [generatePreview, setGeneratePreview] = useState(false)
@@ -167,8 +103,15 @@ const IndexPage = () => {
 
   const handleSocialChange = (field, e) => {
     let change = { ...social }
-    change[field] = e.target.value.toLowerCase()
+    change[field] =
+      field === "discord" ? e.target.value : e.target.value.toLowerCase()
     setSocial(change)
+  }
+
+  const handleSupportChange = (field, e) => {
+    let change = { ...support }
+    change[field] = e.target.value
+    setSupport(change)
   }
 
   const handleCheckChange = field => {
@@ -234,7 +177,8 @@ const IndexPage = () => {
       data.visitorsBadge ||
       data.githubProfileTrophy ||
       data.githubStats ||
-      data.topLanguages
+      data.topLanguages ||
+      data.streakStats
     ) {
       if (social.github && isGitHubUsernameValid(social.github)) {
         generate()
@@ -377,16 +321,24 @@ const IndexPage = () => {
       return
     }
 
-    setPrefix(cache.prefix ? {...DEFAULT_PREFIX, ...cache.prefix} : DEFAULT_PREFIX)
-    setData(cache.data ? {...DEFAULT_DATA, ...cache.data} : DEFAULT_DATA)
-    setLink(cache.link ? {...DEFAULT_LINK, ...cache.link} : DEFAULT_LINK)
-    setSocial(cache.social ? {...DEFAULT_SOCIAL, ...cache.social} : DEFAULT_SOCIAL)
+    setPrefix(
+      cache.prefix ? { ...DEFAULT_PREFIX, ...cache.prefix } : DEFAULT_PREFIX
+    )
+    setData(cache.data ? { ...DEFAULT_DATA, ...cache.data } : DEFAULT_DATA)
+    setLink(cache.link ? { ...DEFAULT_LINK, ...cache.link } : DEFAULT_LINK)
+    setSocial(
+      cache.social ? { ...DEFAULT_SOCIAL, ...cache.social } : DEFAULT_SOCIAL
+    )
 
     const cacheSkills = mergeDefaultWithNewDataSkills(
       DEFAULT_SKILLS,
       cache.skills
     )
     setSkills(cacheSkills || DEFAULT_SKILLS)
+
+    setSupport(
+      cache.support ? { ...DEFAULT_SUPPORT, ...cache.support } : DEFAULT_SUPPORT
+    )
   }
 
   useEffect(() => {
@@ -407,7 +359,7 @@ const IndexPage = () => {
   }, [])
 
   // keep cache updated
-  KeepCacheUpdated({ prefix, data, link, social, skills })
+  KeepCacheUpdated({ prefix, data, link, social, skills, support })
 
   const handleResetForm = () => {
     setPrefix(DEFAULT_PREFIX)
@@ -456,6 +408,15 @@ const IndexPage = () => {
     }
   }
 
+  const handleFileInput = e => {
+    const file = e.target.files[0]
+    const reader = new FileReader()
+    reader.readAsText(file, "UTF-8")
+    reader.onload = () => {
+      setRestore(reader.result)
+    }
+  }
+
   return (
     <Layout>
       <div className="m-4 sm:p-4">
@@ -484,11 +445,16 @@ const IndexPage = () => {
             handleCheckChange={handleCheckChange}
             handleDataChange={handleDataChange}
           />
+          <Support
+            support={support}
+            handleSupportChange={handleSupportChange}
+          />
           <div className="section">
             {(data.visitorsBadge ||
               data.githubProfileTrophy ||
               data.githubStats ||
-              data.topLanguages) &&
+              data.topLanguages ||
+              data.streakStats) &&
             !social.github ? (
               <div className="warning">
                 * Please add github username to use these add-ons
@@ -554,7 +520,7 @@ const IndexPage = () => {
               tabIndex="0"
               role="button"
               onClick={handleGenerate}
-              onKeyDown={(e) => e.keyCode === 13 && handleGenerate()}
+              onKeyDown={e => e.keyCode === 13 && handleGenerate()}
             >
               Generate README
             </div>
@@ -638,6 +604,7 @@ const IndexPage = () => {
                     link={link}
                     social={social}
                     skills={skills}
+                    support={support}
                   />
                 ) : (
                   ""
@@ -649,6 +616,7 @@ const IndexPage = () => {
                     link={link}
                     social={social}
                     skills={skills}
+                    support={support}
                   />
                 ) : (
                   ""
@@ -686,17 +654,29 @@ const IndexPage = () => {
             <input
               type="text"
               className="outline-none w-1/2 mr-6 border-t-0 border-l-0 border-r-0 border solid border-gray-900 py-1 px-2 focus:border-blue-700 prefix"
-              placeholder="JSON Backup"
+              placeholder="Paste JSON code or upload file"
               value={restore}
               onChange={e => setRestore(e.target.value)}
             />
-            <button
-              className="text-xxs sm:text-sm border-2 w-32 border-solid border-gray-900 bg-gray-100 flex items-center justify-center py-1"
-              onClick={handleRestore}
-            >
-              Restore
-            </button>
+
+            <div className="overflow-hidden relative w-64 mt-4 mb-4">
+              <input
+                className="cursor-pointer absolute block opacity-0 pin-r pin-t before:cursor-pointer"
+                type="file"
+                name="vacancyImageFiles"
+                onChange={handleFileInput}
+              />
+              <button className="text-xxs sm:text-sm border-2 w-40 border-solid border-gray-900 bg-gray-100 flex items-center justify-center py-1">
+                Upload json file
+              </button>
+            </div>
           </div>
+          <button
+            className="mr-5 mb-10 text-xxs sm:text-sm border-2 w-32 border-solid border-gray-900 bg-gray-100 flex items-center justify-center py-1"
+            onClick={handleRestore}
+          >
+            Restore
+          </button>
           <div className="flex flex-col items-start justify-center">
             <div className="text-green-700 font-medium">Tips</div>
             <div className="text-sm sm:text-lg text-gray-700">
